@@ -1,0 +1,102 @@
+Project: ORM Part 1
+
+Схема данных (на определенных этапах она будет дополняться отношениями):
+CODE
+Article:
+  fields:
+      title: varchar(50)
+      text: text
+
+Category:
+  fields:
+      title: varchar(50)
+
+Tag:
+  fields:
+      value: varchar(50)
+
+Вначале создаем пустой класс Entity и его наследников Article, Category, Tag. Затем начинаем реализовывать полезный функционал.
+
+Класс Article на питоне:
+CODE
+class Article(Entity):
+   _fields = ['title', 'content']
+Да, это весь класс Article. Методов нет. Всё в Entity.
+
+
+Feature: retrieve
+Конструктор принимает числовой идентификатор сущности и получает все поля из нужной строки соответствующей таблицы в БД. Для тех полей, которые не являются ссылками на другие таблицы, появляются геттеры (если в вашем языке программирования есть свойства — обязательно пользуйтесь, а не бездумно пишите как на C++/Java).
+Пример:
+CODE
+article = Article(1) # select from article where article_id=?
+print(article.title)
+print(article.text)
+# обратите внимание, что article.category на данном этапе реализовывать не нужно
+
+print(article.nosuchfield) # raise AttributeError
+
+Естественно, аналогичным образом должны работать все упомянутые наследники Entity, а не только приведенный в примерах Article.
+
+Feature: lazy_load
+Загружаем информацию при первом вызове какого-либо из геттеров, а не в конструкторе.
+Пример:
+CODE
+article = Article(1)
+print(article.title) # select from article where article_id=?
+print(article.text)
+
+Feature: update
+Пример:
+CODE
+article = Article(1)
+article.title = 'New title'
+article.save() # update article set article_title=? where article_id = ?
+
+article = Article(2)
+article.title = 'Another title'
+article.text = 'Very interesting content'
+article.save() # update article set article_title=?, article_text=? where article_id = ?
+
+# нюанс в программировании и безопасности!
+article = Article(3)
+article.title = 'Third title'
+article.text = 'Very interesting content with some freakin\' "quotes"'
+article.save() # update article set article_title=?, article_text=? where article_id = ?
+
+Feature: create
+Пример:
+CODE
+article = Article() # аргумент конструктора стал опциональным (=None по дефолту)
+article.title = 'New title'
+article.save() # insert into article (article_title) values (?)
+
+article = Article()
+article.title = 'Another title'
+article.text = 'Very interesting content'
+article.save() # insert into article (article_title, article_text) values (?, ?)
+
+# нюанс в программировании и безопасности!
+article = Article()
+article.title = 'Third title'
+article.text = 'Very interesting content with some freakin\' "quotes"'
+article.save() # insert into article (article_title, article_text) values (?, ?)
+
+# еще нюанс в программировании
+article.title = 'Bugs are wonderful'
+article.save() # update article set article_title=? where article_id = ?
+
+
+Feature: delete
+Пример:
+CODE
+article = Article(1)
+article.delete()
+
+article = Article()
+article.delete() # raise RuntimeException
+
+Feature: all
+Пример:
+CODE
+for article in Article.all():
+   print(article.title)

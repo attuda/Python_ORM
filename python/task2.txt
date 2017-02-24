@@ -1,0 +1,71 @@
+Project: ORM Part 2
+
+Следующие фичи посвящены отношениям и подразумевают уже полную схему:
+CODE
+Article:
+  fields:
+      title: varchar(50)
+      text: text
+  relations:
+      Category: one
+      Tag: many
+
+Category:
+  fields:
+      title: varchar(50)
+  relations:
+      Article: many
+
+Tag:
+  fields:
+      value: varchar(50)
+  relations:
+      Article: many
+
+Классы моделей в файле models.py
+CODE
+class Article(Entity):
+   _fields   = ['title', 'text']
+   _parents  = ['category']
+   _children = []
+   _siblings = ['tags']
+   
+   
+class Category(Entity):
+   _fields   = ['title']
+   _parents  = []
+   _children = ['articles']
+   _siblings = []
+   
+   
+class Tag(Entity):
+   _fields   = ['value']
+   _parents  = []
+   _children = []
+   _siblings = ['articles']
+
+
+Весь полезный код по-прежнему в Entity.
+
+Feature: parents
+Пример:
+CODE
+article = Article(1)
+print(article.title)  # select * from article where article_id=?
+print(article.category.title)  # select * from category where category_id=?
+
+Feature: children
+Пример:
+CODE
+category = Category(1)
+for article in category.articles: # select * from article where category_id=?
+   print(article.title)
+Стоит обратить внимание на схожесть с фичей all.
+
+Feature: siblings
+Пример:
+CODE
+article = Article(1)
+for tag in article.tags: # select * from tag natural join article_tag where article_id=?
+   print(tag.value)
+Стоит обратить внимание на схожесть с фичей children.
